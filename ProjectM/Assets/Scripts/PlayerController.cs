@@ -14,6 +14,10 @@ public class PlayerController : MonoBehaviour
     public CharacterController characterController;
     private MouseMove mousemove;
     // Start is called before the first frame update
+
+    public GameObject Inventory;
+
+
     void Start()
     {
         mousemove = GetComponent<MouseMove>();
