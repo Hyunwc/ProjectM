@@ -1,63 +1,75 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class PlayerController : MonoBehaviour
 {
-    public Transform cameraTransform;
-    public float moveSpeed = 10f; //이동 속도
-    public float jumpForce = 10f; //점프힘
-    public float gravity = -20f;
-    public float yVelocity = 0;
+    private CharacterController controller;
+    public float speed = 12f;
+    public float gravity = -9.81f * 2;
+    public float jumpHeight = 3f;
 
-    public CharacterController characterController;
-    private MouseMove mousemove;
-    // Start is called before the first frame update
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
+
+    Vector3 velocity;
+
+    bool isGrounded;
+    bool isMoving;
+
+    private Vector3 lastPosition = new Vector3(0f, 0f, 0f);
 
     public GameObject Inventory;
 
 
     void Start()
     {
-        mousemove = GetComponent<MouseMove>();
-        //characterController = GetComponent<CharacterController>();
+        controller = GetComponent<CharacterController>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        UpdateRotate();
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
+        if(isGrounded && velocity.y < 0)
+        {
+            velocity.y = -2f;
+        }
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
         //캐릭터가 땅에 닿아 있는지 확인
         //isGround = characterController.isGrounded;
-        Vector3 moveDirection = new Vector3(h, 0f, v);
+        Vector3 move = transform.right * x + transform.forward * z;
 
-        moveDirection = cameraTransform.TransformDirection(moveDirection);
+        controller.Move(move * speed * Time.deltaTime);
 
-        moveDirection *= moveSpeed;
-
-        if(characterController.isGrounded)
+        if(Input.GetButtonDown("Jump") && isGrounded)
         {
-            yVelocity = 0;
-            if(Input.GetKeyDown(KeyCode.Space))
-            {
-                yVelocity = jumpForce;
-            }
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);  
         }
-        yVelocity += (gravity * Time.deltaTime);
-        moveDirection.y = yVelocity;
-        characterController.Move(moveDirection * Time.deltaTime);
+
+        velocity.y += gravity * Time.deltaTime;
+
+        controller.Move(velocity * Time.deltaTime);
+
+        if(lastPosition != gameObject.transform.position && isGrounded == true)
+        {
+            isMoving = true;
+        }
+        else
+        {
+            isMoving = false;
+        }
+
+        lastPosition = gameObject.transform.position;
+   
 
     }
 
-    void UpdateRotate()
-    {
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
-        mousemove.CalculateRotation(mouseX, mouseY);
-    }
 }

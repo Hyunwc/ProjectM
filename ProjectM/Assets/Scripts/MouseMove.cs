@@ -4,35 +4,29 @@ using UnityEngine;
 
 public class MouseMove : MonoBehaviour
 {
-    [SerializeField] private float CamXSpeed = 5f;
-    [SerializeField] private float CamYSpeed = 3f;
+    public float mouseSensitivity = 500f;
 
-    private float limitMinX = -80f;
-    private float limitMaxX = 50f;
+    float xRotation = 0f;
+    float yRotation = 0f;
 
-    private float eulerAngleX;
-    private float eulerAngleY;
- 
-    public void CalculateRotation(float mouseX, float mouseY)
+    public float topClamp = -90f;
+    public float bottomClamp = 90f;
+    void Start()
     {
-        eulerAngleY += mouseX * CamYSpeed;
-        eulerAngleX -= mouseY * CamYSpeed;
-        eulerAngleX = ClampAngle(eulerAngleX, limitMinX, limitMaxX);
-        transform.rotation = Quaternion.Euler(eulerAngleX, eulerAngleY, 0);
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    private float ClampAngle(float angle, float min, float max)
+    void Update()
     {
-        if(angle < -360f)
-        {
-            angle += 360f;
-        }
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
-        if (angle > 360f)
-        {
-            angle -= 360f;
-        }
+        xRotation -= mouseY;
 
-        return Mathf.Clamp(angle, min, max);
+        // Clamp the rotation
+        xRotation = Mathf.Clamp(xRotation, topClamp, bottomClamp);
+
+        yRotation += mouseX;
+        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
     }
 }
