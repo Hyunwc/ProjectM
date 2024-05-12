@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
 {
-    public Camera playerCamera;
+    //public Camera playerCamera;
 
     // Shooting
     public bool isShooting, readyToShoot;
@@ -25,6 +26,15 @@ public class Weapon : MonoBehaviour
     public float bulletVelocity = 30f;
     public float bulletPrefabLifeTime = 3f;
 
+    public GameObject muzzleEffect;
+    private Animator animator;
+
+    // Loading
+    public float reloadTime;
+    public int magazineSize, bulletsLeft;
+    public bool isReloading;
+
+    
     public enum ShootingMode
     {
         Single, 
@@ -38,11 +48,20 @@ public class Weapon : MonoBehaviour
     {
         readyToShoot = true;
         burstBulletsLeft = bulletsPerBurst;
+        animator = GetComponent<Animator>();
+
+        bulletsLeft = magazineSize;
     }
 
     // Update is called once per frame
     void Update()
     {
+        // 총알이 0발인 상태에서 사격할 경우
+        if(bulletsLeft == 0 && isShooting)
+        {
+            SoundManager.Instance.emptyMagazineSoundDEagle.Play();
+        }
+
         if(currentShootingMode == ShootingMode.Auto)
         {
             // Holding Down Left Mouse Button
@@ -54,15 +73,35 @@ public class Weapon : MonoBehaviour
             isShooting = Input.GetKeyDown(KeyCode.Mouse0);
         }
 
-        if(readyToShoot && isShooting)
+        if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && isReloading == false)
+        {
+            Reload();
+        }
+
+        // If you want to automatically reload when magazine is empty
+        if(readyToShoot && isShooting == false && isReloading == false && bulletsLeft <= 0)
+        {
+            //Reload();
+        }
+
+        if(readyToShoot && isShooting && bulletsLeft > 0)
         {
             burstBulletsLeft = bulletsPerBurst;
             FireWeapon();
+        }
+
+        if (AmmoManager.Instance.ammoDisplay != null)
+        {
+            AmmoManager.Instance.ammoDisplay.text = $"{bulletsLeft / bulletsPerBurst}/{magazineSize / bulletsPerBurst}";
         }
     }
 
     private void FireWeapon()
     {
+        bulletsLeft--;
+        muzzleEffect.GetComponent<ParticleSystem>().Play(); //총기 이펙트
+        animator.SetTrigger("RECOIL"); //반동 애니메이션
+        SoundManager.Instance.shootingSoundDEagle.Play();
         readyToShoot = false;
 
         Vector3 shootingDirection = CalculateDirectionAndSpread().normalized;
@@ -90,6 +129,18 @@ public class Weapon : MonoBehaviour
         }
     }
 
+    private void Reload()
+    {
+        SoundManager.Instance.reloadingSoundDEagle.Play();
+        isReloading = true;
+        Invoke("ReloadCompleted", reloadTime);
+    }
+
+    private void ReloadCompleted()
+    {
+        bulletsLeft = magazineSize;
+        isReloading = false;
+    }
     private void ResetShot()
     {
         readyToShoot = true;
@@ -97,7 +148,7 @@ public class Weapon : MonoBehaviour
     }
     public Vector3 CalculateDirectionAndSpread()
     {
-        Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+        Ray ray = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
         RaycastHit hit;
 
         Vector3 targetPoint;
