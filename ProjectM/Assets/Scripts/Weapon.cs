@@ -132,6 +132,7 @@ public class Weapon : MonoBehaviour
     private void Reload()
     {
         SoundManager.Instance.reloadingSoundDEagle.Play();
+        animator.SetTrigger("RELOAD");
         isReloading = true;
         Invoke("ReloadCompleted", reloadTime);
     }
