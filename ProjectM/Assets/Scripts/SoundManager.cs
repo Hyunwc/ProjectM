@@ -1,14 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Weapon;
 
 public class SoundManager : MonoBehaviour
 {
     // ΩÃ±€≈Ê ∆–≈œ
     public static SoundManager Instance { get; set; }
 
-    public AudioSource shootingSoundDEagle;
-    public AudioSource reloadingSoundDEagle;
+    public AudioSource ShootingChannel;
+    
+    public AudioClip EagleShot;
+    public AudioClip ScarShot;
+
+    public AudioSource reloadingSoundEagle;
+    public AudioSource reloadingSoundScar;
+
     public AudioSource emptyMagazineSoundDEagle;
 
     private void Awake()
@@ -22,4 +29,31 @@ public class SoundManager : MonoBehaviour
             Instance = this;
         }
     }
+
+    public void PlayShootingSound(WeaponModel weapon)
+    {
+        switch(weapon)
+        {
+            case WeaponModel.PistolEagle:
+                ShootingChannel.PlayOneShot(EagleShot);
+                break;
+            case WeaponModel.Scar:
+                ShootingChannel.PlayOneShot(ScarShot);
+                break;
+        }
+    }
+
+    public void PlayReloadSound(WeaponModel weapon)
+    {
+        switch (weapon)
+        {
+            case WeaponModel.PistolEagle:
+                reloadingSoundEagle.Play();
+                break;
+            case WeaponModel.Scar:
+                reloadingSoundScar.Play();
+                break;
+        }
+    }
+
 }

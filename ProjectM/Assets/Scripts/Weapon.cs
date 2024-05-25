@@ -8,6 +8,8 @@ public class Weapon : MonoBehaviour
 {
     //public Camera playerCamera;
 
+    public bool isActiveWeapon;
+
     // Shooting
     public bool isShooting, readyToShoot;
     bool allowReset = true;
@@ -27,14 +29,21 @@ public class Weapon : MonoBehaviour
     public float bulletPrefabLifeTime = 3f;
 
     public GameObject muzzleEffect;
-    private Animator animator;
+    internal Animator animator;
 
     // Loading
     public float reloadTime;
     public int magazineSize, bulletsLeft;
     public bool isReloading;
 
-    
+    public Vector3 SpawnPosition;
+    public Vector3 SpawnRotation;
+
+    public enum WeaponModel
+    {
+        PistolEagle,
+        Scar
+    }
     public enum ShootingMode
     {
         Single, 
@@ -42,6 +51,7 @@ public class Weapon : MonoBehaviour
         Auto
     }
 
+    public WeaponModel thisWeaponModel;
     public ShootingMode currentShootingMode;
 
     private void Awake()
@@ -56,43 +66,47 @@ public class Weapon : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // 총알이 0발인 상태에서 사격할 경우
-        if(bulletsLeft == 0 && isShooting)
+        if (isActiveWeapon)
         {
-            SoundManager.Instance.emptyMagazineSoundDEagle.Play();
-        }
+            GetComponent<Outline>().enabled = false;
+            // 총알이 0발인 상태에서 사격할 경우
+            if (bulletsLeft == 0 && isShooting)
+            {
+                SoundManager.Instance.emptyMagazineSoundDEagle.Play();
+            }
 
-        if(currentShootingMode == ShootingMode.Auto)
-        {
-            // Holding Down Left Mouse Button
-            isShooting = Input.GetKey(KeyCode.Mouse0);
-        }
-        else if(currentShootingMode == ShootingMode.Single || currentShootingMode == ShootingMode.Burst)
-        {
-            // Clicking Left Mouse Button Once
-            isShooting = Input.GetKeyDown(KeyCode.Mouse0);
-        }
+            if (currentShootingMode == ShootingMode.Auto)
+            {
+                // Holding Down Left Mouse Button
+                isShooting = Input.GetKey(KeyCode.Mouse0);
+            }
+            else if (currentShootingMode == ShootingMode.Single || currentShootingMode == ShootingMode.Burst)
+            {
+                // Clicking Left Mouse Button Once
+                isShooting = Input.GetKeyDown(KeyCode.Mouse0);
+            }
 
-        if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && isReloading == false)
-        {
-            Reload();
-        }
+            if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && isReloading == false)
+            {
+                Reload();
+            }
 
-        // If you want to automatically reload when magazine is empty
-        if(readyToShoot && isShooting == false && isReloading == false && bulletsLeft <= 0)
-        {
-            //Reload();
-        }
+            // If you want to automatically reload when magazine is empty
+            if (readyToShoot && isShooting == false && isReloading == false && bulletsLeft <= 0)
+            {
+                //Reload();
+            }
 
-        if(readyToShoot && isShooting && bulletsLeft > 0)
-        {
-            burstBulletsLeft = bulletsPerBurst;
-            FireWeapon();
-        }
+            if (readyToShoot && isShooting && bulletsLeft > 0)
+            {
+                burstBulletsLeft = bulletsPerBurst;
+                FireWeapon();
+            }
 
-        if (AmmoManager.Instance.ammoDisplay != null)
-        {
-            AmmoManager.Instance.ammoDisplay.text = $"{bulletsLeft / bulletsPerBurst}/{magazineSize / bulletsPerBurst}";
+            if (AmmoManager.Instance.ammoDisplay != null)
+            {
+                AmmoManager.Instance.ammoDisplay.text = $"{bulletsLeft / bulletsPerBurst}/{magazineSize / bulletsPerBurst}";
+            } 
         }
     }
 
@@ -101,7 +115,8 @@ public class Weapon : MonoBehaviour
         bulletsLeft--;
         muzzleEffect.GetComponent<ParticleSystem>().Play(); //총기 이펙트
         animator.SetTrigger("RECOIL"); //반동 애니메이션
-        SoundManager.Instance.shootingSoundDEagle.Play();
+
+        SoundManager.Instance.PlayShootingSound(thisWeaponModel);
         readyToShoot = false;
 
         Vector3 shootingDirection = CalculateDirectionAndSpread().normalized;
@@ -131,7 +146,7 @@ public class Weapon : MonoBehaviour
 
     private void Reload()
     {
-        SoundManager.Instance.reloadingSoundDEagle.Play();
+        SoundManager.Instance.PlayReloadSound(thisWeaponModel);
         animator.SetTrigger("RELOAD");
         isReloading = true;
         Invoke("ReloadCompleted", reloadTime);
