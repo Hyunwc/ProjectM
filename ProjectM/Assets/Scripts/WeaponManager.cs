@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using static Weapon;
 
 public class WeaponManager : MonoBehaviour
 {
@@ -10,6 +12,9 @@ public class WeaponManager : MonoBehaviour
     public List<GameObject> weaponSlots;
 
     public GameObject activeWeaponSlot;
+
+    public int totalRifleAmmo = 0;
+    public int totalPistolAmmo = 0;
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -103,6 +108,45 @@ public class WeaponManager : MonoBehaviour
         {
             Weapon newtWeapon = activeWeaponSlot.transform.GetChild(0).GetComponent<Weapon>();
             newtWeapon.isActiveWeapon = true;
+        }
+    }
+
+    internal void PickUpAmmo(AmmoBox ammo)
+    {
+        switch(ammo.ammoType)
+        {
+            case AmmoBox.AmmoType.PistolAmmo:
+                totalPistolAmmo += ammo.ammoAmount;
+                break;
+            case AmmoBox.AmmoType.RifleAmmo:
+                totalRifleAmmo += ammo.ammoAmount;
+                break;
+        }
+    }
+
+    internal void DecreaseTotalAmmo(int bulletsToDecrease, Weapon.WeaponModel thisWeaponModel)
+    {
+        switch (thisWeaponModel)
+        {
+            case Weapon.WeaponModel.Scar:
+                totalRifleAmmo -= bulletsToDecrease;
+                break;
+            case Weapon.WeaponModel.PistolEagle:
+                totalPistolAmmo -= bulletsToDecrease;
+                break;
+        }
+    }
+
+    public int CheckAmmoLeftFor(Weapon.WeaponModel thisWeaponModel)
+    {
+        switch (thisWeaponModel)
+        {
+            case Weapon.WeaponModel.Scar:
+                return totalRifleAmmo;
+            case Weapon.WeaponModel.PistolEagle:
+                return totalPistolAmmo;
+            default:
+                return 0;
         }
     }
 }
