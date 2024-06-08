@@ -10,18 +10,24 @@ public class Weapon : MonoBehaviour
 
     public bool isActiveWeapon;
 
+    [Header("Shooting")]
     // Shooting
     public bool isShooting, readyToShoot;
     bool allowReset = true;
     public float shootingDelay = 2f;
 
+    [Header("Burst")]
     //Burst
     public int bulletsPerBurst = 3;
     public int burstBulletsLeft;
 
+    [Header("Spread")]
     // Spread
     public float spreadIntensity;
+    public float hipSpreadIntensity;
+    public float adsSpreadIntensity;
 
+    [Header("Bullet")]
     // Bullet
     public GameObject bulletPrefab;
     public Transform bulletSpawn;
@@ -31,6 +37,7 @@ public class Weapon : MonoBehaviour
     public GameObject muzzleEffect;
     internal Animator animator;
 
+    [Header("Loading")]
     // Loading
     public float reloadTime;
     public int magazineSize, bulletsLeft;
@@ -38,6 +45,8 @@ public class Weapon : MonoBehaviour
 
     public Vector3 SpawnPosition;
     public Vector3 SpawnRotation;
+
+    bool isADS;
 
     public enum WeaponModel
     {
@@ -61,6 +70,8 @@ public class Weapon : MonoBehaviour
         animator = GetComponent<Animator>();
 
         bulletsLeft = magazineSize;
+
+        spreadIntensity = hipSpreadIntensity;
     }
 
     // Update is called once per frame
@@ -68,6 +79,16 @@ public class Weapon : MonoBehaviour
     {
         if (isActiveWeapon)
         {
+            //마우스 우클릭시 조준사격 모드
+            if(Input.GetMouseButtonDown(1))
+            {
+                EnterADS();
+            }
+            if (Input.GetMouseButtonUp(1))
+            {
+                ExitADS();
+            }
+
             GetComponent<Outline>().enabled = false;
             // 총알이 0발인 상태에서 사격할 경우
             if (bulletsLeft == 0 && isShooting)
@@ -110,13 +131,38 @@ public class Weapon : MonoBehaviour
         }
     }
 
+    private void EnterADS()
+    {
+        animator.SetTrigger("enterADS");
+        isADS = true;
+        HUDManager.Instance.middleDot.SetActive(false);
+        spreadIntensity = adsSpreadIntensity;
+    }
+
+    private void ExitADS()
+    {
+        animator.SetTrigger("exitADS");
+        isADS = false;
+        HUDManager.Instance.middleDot.SetActive(true);
+        spreadIntensity = hipSpreadIntensity;
+    }
  
 
     private void FireWeapon()
     {
         bulletsLeft--;
         muzzleEffect.GetComponent<ParticleSystem>().Play(); //총기 이펙트
-        animator.SetTrigger("RECOIL"); //반동 애니메이션
+
+        if(isADS)
+        {
+            // RECOIL_ADS
+            animator.SetTrigger("RECOIL_ADS"); //조준 사격 반동 애니메이션
+        }
+        else
+        {
+            animator.SetTrigger("RECOIL"); //반동 애니메이션
+        }
+        
 
         SoundManager.Instance.PlayShootingSound(thisWeaponModel);
         readyToShoot = false;
@@ -193,11 +239,11 @@ public class Weapon : MonoBehaviour
 
         Vector3 direction = targetPoint - bulletSpawn.position;
 
-        float x = UnityEngine.Random.Range(-spreadIntensity, spreadIntensity);
+        float z = UnityEngine.Random.Range(-spreadIntensity, spreadIntensity);
         float y = UnityEngine.Random.Range(-spreadIntensity, spreadIntensity);
 
         //returning the shooting direction and spread
-        return direction + new Vector3(x, y, 0);
+        return direction + new Vector3(0, y, z);
     }
 
     private IEnumerator DestroyBulletAfterTime(GameObject bullet, float delay)
